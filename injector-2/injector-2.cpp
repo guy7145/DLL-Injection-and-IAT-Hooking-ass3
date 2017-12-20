@@ -17,21 +17,8 @@ BOOL ListProcessModules( DWORD dwPID );
 BOOL ListProcessThreads( DWORD dwOwnerPID );
 void printError( TCHAR* msg );
 
-void PatchImportAddressTable() 
-{
-	DWORD baseAdr = (DWORD) GetModuleHandle(NULL);
-	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER) baseAdr;
-	printf("%x\n", (WORD)dosHeader->e_magic);
-	PIMAGE_NT_HEADERS peHeader = (PIMAGE_NT_HEADERS)(baseAdr + (DWORD) dosHeader->e_lfanew);
-	printf("%s\n", &(peHeader->Signature));
-	
-	PIMAGE_DATA_DIRECTORY dataDirectory = peHeader->OptionalHeader.DataDirectory;
-	printf("dataDirectory: %x\n", dataDirectory);
-	PIMAGE_SECTION_HEADER importTable = (PIMAGE_SECTION_HEADER) dataDirectory[1].VirtualAddress;
-	printf("import table: %x\n", importTable);
-
-	printf("%s", importTable->Name);
-}
+PIMAGE_IMPORT_DESCRIPTOR getImportTable( );
+void PatchImportAddressTable( );
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -42,6 +29,64 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 
+PIMAGE_IMPORT_DESCRIPTOR getImportTable(PBYTE baseAddr) {
+	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER) baseAddr;
+	PIMAGE_NT_HEADERS ntHeader = (PIMAGE_NT_HEADERS)(baseAddr + (DWORD) dosHeader->e_lfanew);
+	IMAGE_OPTIONAL_HEADER32 optionalHeader = ntHeader->OptionalHeader;
+	IMAGE_DATA_DIRECTORY dataDirectory = optionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	PIMAGE_IMPORT_DESCRIPTOR importTable = (PIMAGE_IMPORT_DESCRIPTOR)(baseAddr + dataDirectory.VirtualAddress);
+
+	printf("dosHeader magic: %x\n", dosHeader->e_magic);
+	printf("ntHeader signature: %s\n", &(ntHeader->Signature)); // should be PE
+	printf("optionalHeader magic: %x\n", optionalHeader.Magic); // should be 0x10b
+	printf("dataDirectory (size): %x\n", dataDirectory.Size);
+	printf("dataDirectory (relative virtual addr): %x\n", dataDirectory.VirtualAddress);
+	printf("import table: %x\n", importTable);
+
+	return importTable;
+}
+
+void PatchImportAddressTable()
+{
+	CHAR targetDllName[] = "KERNEL32.DLL";
+	SIZE_T targetDllNameLength = strlen(targetDllName);
+	CHAR * targetFunctions[] = {"", "", "", ""};
+	SIZE_T numOfFunctions = 4;
+
+	PIMAGE_IMPORT_DESCRIPTOR pImgaeImportDescriptor;
+	PIMAGE_THUNK_DATA currentThunk;
+	PIMAGE_THUNK_DATA currentOriginalThunk;
+	PIMAGE_IMPORT_BY_NAME pFuncData;
+
+	PBYTE baseAddr = (PBYTE) GetModuleHandle(NULL);
+	pImgaeImportDescriptor = getImportTable(baseAddr);
+	
+	char *currentDllName;
+	while (pImgaeImportDescriptor->Characteristics) {
+		currentDllName = (char *)(baseAddr + pImgaeImportDescriptor->Name);
+		printf("%s\n", currentDllName);
+		if (strncmp(currentDllName, targetDllName, targetDllNameLength)) {
+			currentThunk = (PIMAGE_THUNK_DATA) (baseAddr + pImgaeImportDescriptor->FirstThunk);
+			currentOriginalThunk = (PIMAGE_THUNK_DATA) (baseAddr + pImgaeImportDescriptor->OriginalFirstThunk);
+			pFuncData = (PIMAGE_IMPORT_BY_NAME)(baseAddr + currentOriginalThunk->u1.Function);
+			
+			printf("%x\n", currentOriginalThunk);
+			printf("%x\n", currentThunk);
+			printf("%s", pFuncData);
+
+			/*printf("%s\n", currentOriginalThunk->u1.AddressOfData);
+			printf("%x\n", currentOriginalThunk->u1.ForwarderString);
+			printf("%x\n", currentOriginalThunk->u1.Function);
+			printf("%x\n", currentOriginalThunk->u1.Ordinal);
+
+			printf("%x\n", currentThunk->u1.AddressOfData);
+			printf("%x\n", currentThunk->u1.ForwarderString);
+			printf("%x\n", currentThunk->u1.Function);
+			printf("%x\n", currentThunk->u1.Ordinal);*/
+		}
+		pImgaeImportDescriptor++;
+	}
+}
 
 BOOL GetProcessList( )
 {
@@ -108,7 +153,6 @@ BOOL GetProcessList( )
   CloseHandle( hProcessSnap );
   return( TRUE );
 }
-
 
 BOOL ListProcessModules( DWORD dwPID )
 {

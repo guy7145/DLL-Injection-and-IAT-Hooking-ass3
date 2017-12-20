@@ -24,9 +24,13 @@ void PatchImportAddressTable()
 	printf("%x\n", (WORD)dosHeader->e_magic);
 	PIMAGE_NT_HEADERS peHeader = (PIMAGE_NT_HEADERS)(baseAdr + (DWORD) dosHeader->e_lfanew);
 	printf("%s\n", &(peHeader->Signature));
+	
 	PIMAGE_DATA_DIRECTORY dataDirectory = peHeader->OptionalHeader.DataDirectory;
-	int data_directory_size = dataDirectory->Size;
-	DWORD importTable = ((_IMAGE_DATA_DIRECTORY)(dataDirectory->VirtualAddress))[1];
+	printf("dataDirectory: %x\n", dataDirectory);
+	PIMAGE_SECTION_HEADER importTable = (PIMAGE_SECTION_HEADER) dataDirectory[1].VirtualAddress;
+	printf("import table: %x\n", importTable);
+
+	printf("%s", importTable->Name);
 }
 
 int _tmain(int argc, _TCHAR* argv[])

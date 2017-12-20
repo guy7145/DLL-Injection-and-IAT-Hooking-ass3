@@ -1,0 +1,11 @@
+﻿Build started 12/20/2017 4:17:09 PM.
+     1>Project "C:\Users\ISE\Desktop\injection\injector-2\injector-2.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\injector-2.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt "injector-2.cpp"
+         injector-2.cpp
+     1>c:\users\ise\desktop\injection\injector-2\injector-2.cpp(27): error C2075: 'dataDirectory' : array initialization needs curly braces
+     1>Done Building Project "C:\Users\ISE\Desktop\injection\injector-2\injector-2.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:01.62

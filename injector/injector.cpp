@@ -8,16 +8,8 @@
 #include <string>
 using namespace std;
 
-int main(int argc, char** argv)
-{
-	char dllLocation[] = "C:\\Users\\ISE\\Desktop\\injection\\Debug\\injected.dll";
+void injectDll(char * dllLocation, int pid) {
 	SIZE_T locationsStrLength = strlen(dllLocation);
-
-	if (argc != 2) {
-		printf("expected 1 argument");
-		exit(-1);
-	}
-	int pid = stoi(argv[1]);
 
 	FARPROC loadLibrary = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 	if (!loadLibrary) {
@@ -50,6 +42,19 @@ int main(int argc, char** argv)
 	}
 
 	CloseHandle(process);
+}
 
+int main(int argc, char** argv)
+{
+	char dllLocation[] = "C:\\Users\\ISE\\Desktop\\injection\\Debug\\injected.dll";
+	SIZE_T locationsStrLength = strlen(dllLocation);
+
+	if (argc != 2) {
+		printf("expected 1 argument");
+		exit(-1);
+	}
+	int pid = stoi(argv[1]);
+	
+	injectDll(dllLocation, pid);
 	return 0;
 }
